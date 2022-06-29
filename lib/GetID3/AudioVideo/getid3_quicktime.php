@@ -31,7 +31,7 @@ if (!defined('GETID3_INCLUDEPATH')) { // prevent path-exposing attacks that acce
 
 class getid3_quicktime extends getid3_handler
 {
-
+	private $metaDATAkey = 1;
 	/** audio-video.quicktime
 	 * return all parsed data from all atoms if true, otherwise just returned parsed metadata
 	 *
@@ -50,6 +50,7 @@ class getid3_quicktime extends getid3_handler
 	 * @return bool
 	 */
 	public function Analyze() {
+		$this->metaDATAkey = 1;
 		$info = &$this->getid3->info;
 
 		$info['fileformat'] = 'quicktime';
@@ -810,7 +811,7 @@ class getid3_quicktime extends getid3_handler
 							$atom_structure['sample_description_table'][$i]['parrot_frame_metadata']['mime_type']        =       substr($atom_structure['sample_description_table'][$i]['data'],  1, 55);
 							$atom_structure['sample_description_table'][$i]['parrot_frame_metadata']['metadata_version'] = (int) substr($atom_structure['sample_description_table'][$i]['data'], 55,  1);
 							unset($atom_structure['sample_description_table'][$i]['data']);
-$this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in this version of getID3() ['.$this->getid3->version().']');
+							$this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in this version of getID3() ['.$this->getid3->version().']');
 							continue;
 						}
 
@@ -1101,7 +1102,7 @@ $this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in 
 
 
 				case 'stco': // Sample Table Chunk Offset atom
-//					if (true) {
+					// if (true) {
 					if ($ParseAllPossibleAtoms) {
 						$atom_structure['version']        = getid3_lib::BigEndian2Int(substr($atom_data,  0, 1));
 						$atom_structure['flags_raw']      = getid3_lib::BigEndian2Int(substr($atom_data,  1, 3)); // hardcoded: 0x0000
@@ -1467,7 +1468,7 @@ $this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in 
 				case 'mdat': // Media DATa atom
 					// 'mdat' contains the actual data for the audio/video, possibly also subtitles
 
-	/* due to lack of known documentation, this is a kludge implementation. If you know of documentation on how mdat is properly structed, please send it to info@getid3.org */
+	 				/* due to lack of known documentation, this is a kludge implementation. If you know of documentation on how mdat is properly structed, please send it to info@getid3.org */
 
 					// first, skip any 'wide' padding, and second 'mdat' header (with specified size of zero?)
 					$mdat_offset = 0;
@@ -1658,7 +1659,7 @@ $this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in 
 					}
 					break;
 				case 'NCTG': // Nikon - https://exiftool.org/TagNames/Nikon.html#NCTG
-//					getid3_lib::IncludeDependency(GETID3_INCLUDEPATH.'module.tag.nikon-nctg.php', __FILE__, true);
+					// getid3_lib::IncludeDependency(GETID3_INCLUDEPATH.'module.tag.nikon-nctg.php', __FILE__, true);
 					$nikonNCTG = new getid3_tag_nikon_nctg($this->getid3);
 
 					$atom_structure['data'] = $nikonNCTG->parse($atom_data);
@@ -1702,12 +1703,11 @@ $this->warning('incomplete/incorrect handling of "stsd" with Parrot metadata in 
 					break;
 
 				case 'data': // metaDATA atom
-					static $metaDATAkey = 1; // real ugly, but so is the QuickTime structure that stores keys and values in different multinested locations that are hard to relate to each other
 					// seems to be 2 bytes language code (ASCII), 2 bytes unknown (set to 0x10B5 in sample I have), remainder is useful data
 					$atom_structure['language'] =                           substr($atom_data, 4 + 0, 2);
 					$atom_structure['unknown']  = getid3_lib::BigEndian2Int(substr($atom_data, 4 + 2, 2));
 					$atom_structure['data']     =                           substr($atom_data, 4 + 4);
-					$atom_structure['key_name'] = @$info['quicktime']['temp_meta_key_names'][$metaDATAkey++];
+					$atom_structure['key_name'] = @$info['quicktime']['temp_meta_key_names'][$this->metaDATAkey++];
 
 					if ($atom_structure['key_name'] && $atom_structure['data']) {
 						@$info['quicktime']['comments'][str_replace('com.apple.quicktime.', '', $atom_structure['key_name'])][] = $atom_structure['data'];
